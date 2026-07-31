@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <title>ExpoMind - AI Exhibition Copilot</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="extras.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <header class="topbar">
+    <a class="brand" href="#"><span class="logo">E</span><span>ExpoMind</span></a>
+    <div class="event-chip"><span class="pulse"></span> 2026 Shenzhen Electronics Expo &middot; Live</div>
+    <div class="header-actions"><span class="sync" id="syncState">Cloud synced</span><button class="avatar" id="accountBtn" title="Sign out">CX</button></div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="sidebar">
+      <nav>
+        <button class="nav-item active" data-view="live"><span>&#9678;</span> Live Copilot</button>
+        <button class="nav-item" data-view="contacts"><span>&#9673;</span> Contacts <b id="contactCount">28</b></button>
+        <button class="nav-item" data-view="graph"><span>&#8984;</span> Relationship Graph</button>
+        <button class="nav-item" data-view="tasks"><span>&#10003;</span> Follow-ups <b id="taskCount">0</b></button>
+        <button class="nav-item admin-only" data-view="admin"><span>&#9881;</span> User Admin</button>
+      </nav>
+      <div class="today-card">
+        <div class="eyebrow">TODAY'S SIGNAL</div>
+        <strong>0</strong><span>stored contacts</span>
+        <div class="mini-bars"><i style="height:30%"></i><i style="height:48%"></i><i style="height:40%"></i><i style="height:72%"></i><i style="height:92%"></i><i style="height:65%"></i></div>
+        <small>0 qualified leads</small>
+      </div>
+      <div class="user-card"><span class="avatar small">CX</span><div><b>Chen Xingyu</b><small>Nebula Tech &middot; Sales Director</small></div><button>&bull;&bull;&bull;</button></div>
+    </aside>
+
+    <section class="workspace">
+      <section class="view active-view" id="view-live">
+        <div class="workspace-head">
+          <div><p class="eyebrow">LIVE COPILOT</p><h1>Real-time Exhibition Assistant</h1><p>Turn every conversation into an actionable business opportunity.</p></div>
+          <button class="ghost-btn" id="privacyBtn">Privacy mode</button>
+        </div>
+        <div class="demo-layout">
+          <section class="camera-panel">
+            <div class="camera-feed" id="cameraFeed">
+              <video id="cameraVideo" autoplay muted playsinline></video>
+              <div class="noise"></div>
+              <div class="camera-top"><span><i class="rec-dot"></i> <span id="liveState">CAMERA OFF</span></span><span id="liveTimer">00:00:00</span></div>
+              <div class="scan-line"></div>
+              <div class="face-box"><span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span><div class="match">98.6% match</div></div>
+              <div class="consent-chip">Consent confirmed &middot; Local processing</div>
+              <div class="camera-caption"><span class="sound-wave">&#9602;&#9605;&#9603;&#9607;&#9603;&#9606;&#9602;</span><div><b id="listenState">Voice capture is off</b><small id="transcript">No transcript recorded.</small></div></div>
+            </div>
+            <div class="capture-actions">
+              <button class="tool-btn" id="cardBtn">&#9635;<small>Scan card</small></button><input id="cardFile" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
+              <button class="capture" id="captureBtn" aria-label="Capture"><span></span></button>
+              <button class="tool-btn" id="recordBtn">&#9679;<small>Start voice</small></button>
+              <button class="tool-btn" id="cameraBtn">&#9673;<small>Use camera</small></button>
+            </div>
+          </section>
+
+          <aside class="insight-panel">
+            <div class="empty-insight" id="contactEmpty"><div class="modal-icon">&#9673;</div><h2>No contact selected</h2><p>Choose an existing database contact or create one from confirmed business-card details.</p><button class="save-btn" id="newContactLive">Create contact</button></div>
+            <div id="contactInsight" hidden>
+            <div class="detect-label"><span class="pulse"></span> Contact selected <em>database</em></div>
+            <div class="profile-head">
+              <div class="portrait" id="selectedInitials">--<span>DB</span></div>
+              <div><h2 id="selectedName">Contact</h2><p id="selectedCompany">Company</p><div class="tags" id="selectedTags"></div></div>
+              <button class="more">&bull;&bull;&bull;</button>
+            </div>
+            <div class="score-card"><div><small>Qualified score</small><strong id="score">0%</strong></div><div class="score-track"><i id="scoreBar"></i></div><span>Stored in <b>PostgreSQL</b></span></div>
+            <div class="info-block"><div class="block-title"><span>&#9719;</span> Live transcript</div><div class="timeline"><i></i><div><p id="liveTranscriptCopy">Start voice capture to record a real transcript.</p></div></div></div>
+            <div class="info-block"><div class="block-title"><span>&#10022;</span> Recorded interests</div><div class="interest-tags" id="selectedInterests"></div></div>
+            <div class="talk-card"><div class="block-title"><span>&#10022;</span> AI analysis <button id="analyzeBtn">Analyze real transcript</button></div><p id="analysisSummary">Not analyzed.</p><div class="interest-tags" id="analysisEvidence"></div><textarea id="nextAction" placeholder="Enter the real follow-up action agreed during the conversation"></textarea></div>
+            <button class="save-btn" id="saveBtn">Save conversation <span>Ctrl Enter</span></button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="view-contacts">
+        <div class="workspace-head"><div><p class="eyebrow">SMART CRM</p><h1>Contacts</h1><p>Only real contacts stored in your database.</p></div><div><button class="ghost-btn" id="newContactBtn">New contact</button> <button class="ghost-btn" id="exportBtn">Export CRM</button></div></div>
+        <div class="metric-grid"><article><small>Total contacts</small><strong id="metricContacts">0</strong><span>Database</span></article><article><small>High-intent leads</small><strong id="metricHigh">0</strong><span class="green">Score 75+</span></article><article><small>Saved conversations</small><strong id="metricConversations">0</strong><span>Database</span></article><article><small>Follow-up due</small><strong id="metricTasks">0</strong><span class="amber">Recorded actions</span></article></div>
+        <div class="crm-card"><div class="crm-toolbar"><input id="contactSearch" placeholder="Search name, company or interest"><div class="filter-pills"><button class="active">All</button><button>High intent</button><button>Decision makers</button></div></div><div class="contact-list" id="contactList"></div></div>
+      </section>
+
+      <section class="view" id="view-graph">
+        <div class="workspace-head"><div><p class="eyebrow">KNOWLEDGE GRAPH</p><h1>Business Relationship Map</h1><p>See hidden paths across people, companies, needs and events.</p></div><div class="graph-legend"><span><i class="person-dot"></i> People</span><span><i class="company-dot"></i> Companies</span><span><i class="topic-dot"></i> Topics</span></div></div>
+        <div class="graph-card" id="graphCard"><svg id="graphSvg" viewBox="0 0 900 560" role="img" aria-label="Business relationship graph"></svg><div class="graph-hint">Drag nodes to explore &middot; Click a person for details</div></div>
+      </section>
+
+      <section class="view" id="view-tasks">
+        <div class="workspace-head"><div><p class="eyebrow">FOLLOW-UP</p><h1>Recorded Next Actions</h1><p>Actions saved from real conversations.</p></div></div>
+        <div class="task-board" id="taskBoard"></div>
+      </section>
+      <section class="view" id="view-admin">
+        <div class="workspace-head"><div><p class="eyebrow">ADMINISTRATION</p><h1>User Management</h1><p>Manage accounts, roles and access status.</p></div><button class="ghost-btn" id="refreshUsers">Refresh</button></div>
+        <div class="crm-card"><div class="contact-list" id="userList"></div></div>
+        <div class="workspace-head admin-subhead"><div><h2>Audit log</h2><p>Recent administrator changes.</p></div></div>
+        <div class="crm-card"><div class="contact-list" id="auditList"></div></div>
+      </section>
+    </section>
+  </main>
+  <div class="toast" id="toast">Saved</div>
+  <section class="auth-screen" id="authScreen">
+    <div class="auth-visual">
+      <div class="auth-brand"><span class="logo">E</span><b>ExpoMind</b></div>
+      <div class="auth-message"><span class="eyebrow">AI EXHIBITION COPILOT</span><h1>Never lose a valuable<br>business connection again.</h1><p>Capture real conversations. Build verified contact context. Follow up at the right moment.</p><div class="auth-proof"><span><b>Private</b> user-scoped data</span><span><b>Live</b> camera tracking</span><span><b>Real</b> PostgreSQL records</span></div></div>
+      <div class="auth-orbit"><i></i><i></i><i></i><span>AI</span></div>
+    </div>
+    <div class="auth-panel">
+      <form class="auth-card" id="authForm">
+        <div class="mobile-auth-brand"><span class="logo">E</span><b>ExpoMind</b></div>
+        <span class="eyebrow" id="authEyebrow">WELCOME BACK</span><h2 id="authTitle">Sign in to your workspace</h2><p id="authSubtitle">Continue your exhibition intelligence workflow.</p>
+        <label class="name-field" id="nameField">Full name<input id="authName" autocomplete="name" placeholder="Chen Xingyu"></label>
+        <label>Email<input id="authEmail" type="email" autocomplete="email" placeholder="you@company.com" required></label>
+        <label>Password<input id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" required></label>
+        <div class="auth-error" id="authError"></div>
+        <button class="save-btn auth-submit" id="authSubmit" type="submit">Sign in</button>
+        <p class="auth-switch"><span id="authQuestion">New to ExpoMind?</span> <button type="button" id="authSwitch">Create account</button></p>
+        <small class="auth-terms">By continuing, you agree to responsible capture and data privacy requirements.</small>
+      </form>
+    </div>
+  </section>
+  <div class="modal" id="consentModal"><div class="modal-card"><button class="modal-close" id="modalClose">&times;</button><div class="modal-icon">&#9673;</div><h2>Responsible capture</h2><p>Before recording, confirm that the other person has agreed to camera and audio capture. Raw media stays on this device in the demo.</p><label><input type="checkbox" id="consentCheck"> I have received clear consent</label><button class="save-btn" id="consentContinue" disabled>Continue with camera</button></div></div>
+  <div class="modal" id="contactModal"><form class="modal-card" id="contactForm"><button class="modal-close" type="button" id="contactClose">&times;</button><div class="modal-icon">+</div><h2>Create real contact</h2><p>Enter details confirmed by the person or copied from their business card.</p><label>Name<input id="contactName" required maxlength="100"></label><label>Company<input id="contactCompany" required maxlength="160"></label><label>Role<input id="contactRole" maxlength="160"></label><label>Interests, comma separated<input id="contactInterests"></label><label>Qualification score (0-100)<input id="contactScore" type="number" min="0" max="100" value="50"></label><button class="save-btn" type="submit">Save contact</button></form></div>
+  <script src="app.js"></script>
+</body>
+</html>

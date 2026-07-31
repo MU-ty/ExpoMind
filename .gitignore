@@ -1,0 +1,43 @@
+# Environment & secrets
+.env
+*.env
+!.env.example
+
+# Docker
+# (docker-compose.yml and Dockerfiles are committed)
+
+# Node / frontend
+node_modules/
+.next/
+out/
+dist/
+.cache/
+
+# Python / backend
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+venv/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Uploads / runtime data
+uploads/
+data/
+*.db

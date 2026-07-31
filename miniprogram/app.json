@@ -1,0 +1,13 @@
+{
+  "pages": ["pages/login/login","pages/home/home","pages/contacts/contacts","pages/capture/capture","pages/tasks/tasks","pages/admin/admin"],
+  "window": {"navigationBarBackgroundColor":"#07111f","navigationBarTextStyle":"white","navigationBarTitleText":"ExpoMind","backgroundColor":"#07111f","backgroundTextStyle":"dark"},
+  "tabBar": {"color":"#7f91a4","selectedColor":"#43e6cd","backgroundColor":"#0a1726","borderStyle":"black","list":[
+    {"pagePath":"pages/home/home","text":"Home"},
+    {"pagePath":"pages/contacts/contacts","text":"Contacts"},
+    {"pagePath":"pages/capture/capture","text":"Capture"},
+    {"pagePath":"pages/tasks/tasks","text":"Tasks"}
+  ]},
+  "permission": {"scope.record":{"desc":"Record an exhibition conversation only after clear consent."}},
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

@@ -1,0 +1,17 @@
+const api = require('../../utils/api')
+Page({
+ data:{cameraOn:false,consented:false,contacts:[],contactNames:[],contactIndex:0,selectedContact:null,transcript:'',analysis:null,nextAction:'',analyzing:false},
+ onShow(){this.loadContacts()},
+ async loadContacts(){try{const contacts=await api.get('/contacts');this.setData({contacts,contactNames:contacts.map(x=>x.name+' - '+x.company)})}catch(e){wx.showToast({title:e.message,icon:'none'})}},
+ consentChange(e){this.setData({consented:e.detail.value})},
+ openCamera(){if(!this.data.consented)return wx.showModal({title:'Consent required',content:'Confirm clear consent before capture.',showCancel:false});this.setData({cameraOn:true})},
+ cameraError(){this.setData({cameraOn:false});wx.showToast({title:'Camera unavailable',icon:'none'})},
+ switchCamera(){wx.showToast({title:'Use the system camera switch',icon:'none'})},
+ selectContact(e){const i=Number(e.detail.value);this.setData({contactIndex:i,selectedContact:this.data.contacts[i]})},
+ transcriptInput(e){this.setData({transcript:e.detail.value,analysis:null})},nextInput(e){this.setData({nextAction:e.detail.value})},
+ capture(){return new Promise((resolve,reject)=>wx.createCameraContext().takePhoto({quality:'high',success:r=>resolve(r.tempImagePath),fail:reject}))},
+ async scanCard(){if(!this.data.consented||!this.data.cameraOn)return wx.showToast({title:'Enable consent and camera',icon:'none'});wx.showLoading({title:'Reading card'});try{const path=await this.capture(),data=await api.upload('/ai/business-card',path,'image'),r=data.result||{};wx.setStorageSync('pendingCard',{name:r.name||'',company:r.company||'',role:r.role||'',interests:Array.isArray(r.interests)?r.interests.join(', '):'',score:50});wx.switchTab({url:'/pages/contacts/contacts'})}catch(e){wx.showModal({title:'Scan failed',content:e.message,showCancel:false})}finally{wx.hideLoading()}},
+ async takeReference(){if(!this.data.consented||!this.data.cameraOn)return wx.showToast({title:'Enable consent and camera',icon:'none'});try{await this.capture();wx.showToast({title:'Captured'})}catch(e){wx.showToast({title:'Capture failed',icon:'none'})}},
+ async analyze(){if(!this.data.transcript.trim())return wx.showToast({title:'Enter a real transcript',icon:'none'});this.setData({analyzing:true});try{const data=await api.post('/ai/analyze-transcript',{transcript:this.data.transcript.trim()});this.setData({analysis:data.result,nextAction:data.result.next_action||''})}catch(e){wx.showModal({title:'Analysis unavailable',content:e.message,showCancel:false})}finally{this.setData({analyzing:false})}},
+ async save(){if(!this.data.consented)return wx.showToast({title:'Consent is required',icon:'none'});if(!this.data.selectedContact)return wx.showToast({title:'Select a contact',icon:'none'});if(!this.data.transcript.trim())return wx.showToast({title:'Enter a real transcript',icon:'none'});try{await api.post('/conversations',{contact_id:this.data.selectedContact.id,transcript:this.data.transcript.trim(),summary:this.data.analysis?this.data.analysis.summary:'',next_action:this.data.nextAction,score:this.data.analysis?this.data.analysis.score:this.data.selectedContact.score});if(this.data.analysis)await api.patch('/contacts/'+this.data.selectedContact.id,{interests:this.data.analysis.interests||[],score:this.data.analysis.score});this.setData({transcript:'',analysis:null,nextAction:''});wx.showToast({title:'Saved to database'})}catch(e){wx.showModal({title:'Save failed',content:e.message,showCancel:false})}}
+})

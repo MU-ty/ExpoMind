@@ -1,0 +1,1 @@
+const api=require('../../utils/api');Page({data:{tasks:[]},onShow(){this.load()},async load(){try{const rows=await api.get('/conversations');this.setData({tasks:rows.filter(x=>x.next_action&&x.next_action.trim()).map(x=>({...x,date:new Date(x.created_at).toLocaleDateString()}))})}catch(e){wx.showToast({title:e.message,icon:'none'})}}})

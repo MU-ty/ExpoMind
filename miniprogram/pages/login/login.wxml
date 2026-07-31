@@ -1,0 +1,7 @@
+<view class="login">
+  <view class="logo">E</view><view class="brand">ExpoMind</view>
+  <view class="hero">每一次展会交流，<text>都值得被记住。</text></view>
+  <view class="muted intro">使用微信安全登录。ExpoMind 不会获取你的微信密码，业务数据独立保存在企业数据库。</view>
+  <button class="btn login-btn" loading="{{loading}}" disabled="{{loading}}" bindtap="login">微信登录</button>
+  <view class="terms">登录即表示你同意隐私政策；录制前必须获得对方明确同意。</view>
+</view>

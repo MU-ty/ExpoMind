@@ -1,0 +1,7 @@
+<view class="page">
+  <view class="eyebrow">TODAY</view><view class="title">展会工作台</view><view class="muted">数据来自你的真实业务记录</view>
+  <view class="metrics"><view class="card"><text>联系人</text><strong>{{stats.contacts}}</strong></view><view class="card"><text>高意向</text><strong>{{stats.high_intent}}</strong></view><view class="card"><text>已记录交流</text><strong>{{stats.conversations}}</strong></view></view>
+  <view class="card action" bindtap="goCapture"><view><view class="action-title">开始现场交流</view><view class="muted">拍名片、选联系人、记录真实对话</view></view><text>›</text></view>
+  <view wx:if="{{isAdmin}}" class="card action" bindtap="goAdmin"><view><view class="action-title">管理员中心</view><view class="muted">用户、角色与访问状态</view></view><text>›</text></view>
+  <view class="section-title">最近联系人</view><view wx:if="{{!contacts.length}}" class="empty">尚无联系人</view><view wx:for="{{contacts}}" wx:key="id" class="card contact"><view class="avatar">{{item.initials}}</view><view class="grow"><view>{{item.name}}</view><view class="muted small">{{item.company}} · {{item.role}}</view></view><view class="score">{{item.score}}%</view></view>
+</view>

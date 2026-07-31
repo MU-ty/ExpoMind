@@ -1,0 +1,13 @@
+<view class="capture-page">
+ <camera wx:if="{{cameraOn}}" class="camera" device-position="back" flash="off" binderror="cameraError"><cover-view class="live">● LIVE</cover-view><cover-view class="frame"></cover-view></camera>
+ <view wx:else class="camera-off"><view>摄像头未开启</view><button class="btn" bindtap="openCamera">确认授权并开启</button></view>
+ <view class="toolbar"><button class="tool" bindtap="scanCard">扫描名片</button><button class="shutter" bindtap="takeReference"></button><button class="tool" bindtap="switchCamera">切换镜头</button></view>
+ <view class="page form-area">
+  <view class="card consent"><switch checked="{{consented}}" bindchange="consentChange" color="#43e6cd"/><view><view>已获得对方明确同意</view><view class="muted tiny">未确认时禁止采集和保存</view></view></view>
+  <picker mode="selector" range="{{contactNames}}" value="{{contactIndex}}" bindchange="selectContact"><view class="input">{{selectedContact?selectedContact.name+' · '+selectedContact.company:'选择已核实联系人'}}</view></picker>
+  <textarea class="transcript" value="{{transcript}}" bindinput="transcriptInput" placeholder="粘贴或输入真实对话转写；不填写不会生成分析"></textarea>
+  <button class="btn secondary" loading="{{analyzing}}" bindtap="analyze">使用 Qwen 分析真实转写</button>
+  <view wx:if="{{analysis}}" class="card"><view class="eyebrow">AI ANALYSIS</view><view class="summary">{{analysis.summary}}</view><view><text wx:for="{{analysis.interests}}" wx:key="*this" class="tag">{{item}}</text></view><view class="row between score-row"><text>有证据支持的评分</text><text class="score">{{analysis.score}}%</text></view><textarea class="next" value="{{nextAction}}" bindinput="nextInput" placeholder="确认下一步行动"></textarea></view>
+  <button class="btn" bindtap="save">保存真实交流</button><view class="safe-bottom"></view>
+ </view>
+</view>
