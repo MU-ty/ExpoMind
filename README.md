@@ -14,7 +14,7 @@ Open `http://localhost:8088` (or the `APP_PORT` value from `.env`).
 
 ## Real Qwen integration
 
-Set `DASHSCOPE_API_KEY` in `.env` to enable the real AI actions. The backend calls the OpenAI-compatible DashScope endpoint using `QWEN_VISION_MODEL` for business-card extraction and `QWEN_TEXT_MODEL` for transcript analysis. When the key is absent or the provider fails, the UI shows the error and no fallback data is created.
+Speech recognition runs locally with `faster-whisper` using `WHISPER_MODEL`. Transcript analysis runs locally in Docker through Ollama using `LOCAL_LLM_MODEL=qwen2.5:0.5b`. Set `DASHSCOPE_API_KEY` only if Qwen vision business-card extraction is needed. When a real provider fails, the UI shows the error and no fallback data is created.
 
 - **Scan card** captures the current camera frame or accepts a phone camera/file upload.
 - Extracted fields are placed in a review form and are not stored until a user confirms them.
