@@ -3,19 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#07111f">
+  <meta name="theme-color" content="#f7f6f2">
   <title>ExpoMind - AI Exhibition Copilot</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://db.onlinewebfonts.com/c/9d4d074c9335825a23cce178ee03b498?family=P22+Mackinac+W01+Book">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="extras.css">
 </head>
 <body>
   <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
   <header class="topbar">
-    <a class="brand" href="#"><span class="logo">E</span><span>ExpoMind</span></a>
-    <div class="event-chip"><span class="pulse"></span> 2026 Shenzhen Electronics Expo &middot; Live</div>
-    <div class="header-actions"><span class="sync" id="syncState">Cloud synced</span><button class="avatar" id="accountBtn" title="Sign out">CX</button></div>
+    <a class="brand" href="#"><span class="logo"><svg viewBox="0 0 256 256" aria-hidden="true"><path d="M 144 256 L 27.598 256 L 144 139.598 Z M 256 207.5 L 200 256 L 200 56 L 0 56 L 48 0 L 256 0 Z M 0 204.402 L 0 112 L 92.402 112 Z"></path></svg></span><span>ExpoMind</span></a>
+    <button class="event-chip" id="eventChip" type="button" title="Edit exhibition name"><span class="pulse"></span><span id="eventName">2026 Shenzhen Electronics Expo</span><span class="event-live">&middot; Live</span><span class="event-edit">Edit</span></button>
+    <div class="header-actions"><span class="sync" id="syncState">Cloud synced</span><button class="avatar" id="accountBtn" title="Open account menu" aria-expanded="false">CX</button></div>
   </header>
 
   <main class="app-shell">
@@ -33,7 +35,7 @@
         <div class="mini-bars"><i style="height:30%"></i><i style="height:48%"></i><i style="height:40%"></i><i style="height:72%"></i><i style="height:92%"></i><i style="height:65%"></i></div>
         <small>0 qualified leads</small>
       </div>
-      <div class="user-card"><span class="avatar small">CX</span><div><b>Chen Xingyu</b><small>Nebula Tech &middot; Sales Director</small></div><button>&bull;&bull;&bull;</button></div>
+      <button class="user-card" id="userCard" type="button" aria-expanded="false"><span class="avatar small" id="sidebarAvatar">CX</span><span class="user-card-copy"><b id="sidebarUserName">Account</b><small id="sidebarUserRole">ExpoMind user</small></span><span class="user-more">&bull;&bull;&bull;</span></button>
     </aside>
 
     <section class="workspace">
@@ -66,13 +68,14 @@
             <div id="contactInsight" hidden>
             <div class="detect-label"><span class="pulse"></span> Contact selected <em>database</em></div>
             <div class="profile-head">
-              <div class="portrait" id="selectedInitials">--<span>DB</span></div>
+              <div class="portrait" id="selectedInitials">--<img id="selectedPhoto" alt="" hidden><span>DB</span></div>
               <div><h2 id="selectedName">Contact</h2><p id="selectedCompany">Company</p><div class="tags" id="selectedTags"></div></div>
               <button class="more">&bull;&bull;&bull;</button>
             </div>
             <div class="score-card"><div><small>Qualified score</small><strong id="score">0%</strong></div><div class="score-track"><i id="scoreBar"></i></div><span>Stored in <b>PostgreSQL</b></span></div>
             <div class="info-block"><div class="block-title"><span>&#9719;</span> Live transcript</div><div class="timeline"><i></i><div><p id="liveTranscriptCopy">Start voice capture to record a real transcript.</p></div></div></div>
             <div class="info-block"><div class="block-title"><span>&#10022;</span> Recorded interests</div><div class="interest-tags" id="selectedInterests"></div></div>
+            <div class="info-block"><div class="block-title"><span>&#9742;</span> Contact details</div><p id="selectedDetails">Not recorded</p><p id="selectedSummary">No personal summary recorded.</p><div class="talk-actions"><button id="capturePhotoBtn">Capture photo</button><button id="enrollFaceBtn">Enroll face with consent</button></div></div>
             <div class="talk-card"><div class="block-title"><span>&#10022;</span> AI analysis <button id="analyzeBtn">Analyze real transcript</button></div><p id="analysisSummary">Not analyzed.</p><div class="interest-tags" id="analysisEvidence"></div><textarea id="nextAction" placeholder="Enter the real follow-up action agreed during the conversation"></textarea></div>
             <button class="save-btn" id="saveBtn">Save conversation <span>Ctrl Enter</span></button>
             </div>
@@ -87,8 +90,8 @@
       </section>
 
       <section class="view" id="view-graph">
-        <div class="workspace-head"><div><p class="eyebrow">KNOWLEDGE GRAPH</p><h1>Business Relationship Map</h1><p>See hidden paths across people, companies, needs and events.</p></div><div class="graph-legend"><span><i class="person-dot"></i> People</span><span><i class="company-dot"></i> Companies</span><span><i class="topic-dot"></i> Topics</span></div></div>
-        <div class="graph-card" id="graphCard"><svg id="graphSvg" viewBox="0 0 900 560" role="img" aria-label="Business relationship graph"></svg><div class="graph-hint">Drag nodes to explore &middot; Click a person for details</div></div>
+        <div class="workspace-head"><div><p class="eyebrow">KNOWLEDGE GRAPH</p><h1>Business Relationship Map</h1><p>See hidden paths across people, companies, needs and events.</p></div><div class="graph-legend"><span><i class="person-dot"></i> Avatar</span><span><i class="company-dot"></i> Qualification</span><span><i class="topic-dot"></i> Live signal</span></div></div>
+        <div class="graph-card" id="graphCard"><svg id="graphSvg" viewBox="0 0 900 660" role="img" aria-label="Business relationship graph"></svg><div class="graph-hint">Hover to focus &middot; Click an avatar for the complete business card</div></div>
       </section>
 
       <section class="view" id="view-tasks">
@@ -103,29 +106,54 @@
       </section>
     </section>
   </main>
+  <div class="account-popover" id="accountPopover" hidden>
+    <div class="account-popover-head"><span class="avatar account-avatar" id="menuAvatar">CX</span><div><b id="menuUserName">Account</b><small id="menuUserEmail">email</small><em id="menuUserRole">USER</em></div></div>
+    <button type="button" id="profileSettingsBtn"><span>Personal settings</span><b>&rarr;</b></button>
+    <button type="button" class="logout-entry" id="logoutMenuBtn"><span>Sign out</span><b>&rarr;</b></button>
+  </div>
   <div class="toast" id="toast">Saved</div>
   <section class="auth-screen" id="authScreen">
-    <div class="auth-visual">
-      <div class="auth-brand"><span class="logo">E</span><b>ExpoMind</b></div>
-      <div class="auth-message"><span class="eyebrow">AI EXHIBITION COPILOT</span><h1>Never lose a valuable<br>business connection again.</h1><p>Capture real conversations. Build verified contact context. Follow up at the right moment.</p><div class="auth-proof"><span><b>Private</b> user-scoped data</span><span><b>Live</b> camera tracking</span><span><b>Real</b> PostgreSQL records</span></div></div>
-      <div class="auth-orbit"><i></i><i></i><i></i><span>AI</span></div>
+    <div class="auth-video-bg" aria-hidden="true">
+      <video id="authHeroVideo" muted playsinline preload="auto" crossorigin="anonymous" src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260715_090628_7052d8a6-a094-4341-a4a2-ad58493a67a9.mp4"></video>
+      <canvas id="authHeroCanvas"></canvas>
+      <div class="auth-video-wash"></div>
     </div>
-    <div class="auth-panel">
-      <form class="auth-card" id="authForm">
-        <div class="mobile-auth-brand"><span class="logo">E</span><b>ExpoMind</b></div>
-        <span class="eyebrow" id="authEyebrow">WELCOME BACK</span><h2 id="authTitle">Sign in to your workspace</h2><p id="authSubtitle">Continue your exhibition intelligence workflow.</p>
-        <label class="name-field" id="nameField">Full name<input id="authName" autocomplete="name" placeholder="Chen Xingyu"></label>
-        <label>Email<input id="authEmail" type="email" autocomplete="email" placeholder="you@company.com" required></label>
-        <label>Password<input id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" required></label>
-        <div class="auth-error" id="authError"></div>
-        <button class="save-btn auth-submit" id="authSubmit" type="submit">Sign in</button>
-        <p class="auth-switch"><span id="authQuestion">New to ExpoMind?</span> <button type="button" id="authSwitch">Create account</button></p>
-        <small class="auth-terms">By continuing, you agree to responsible capture and data privacy requirements.</small>
-      </form>
+    <header class="auth-nav">
+      <a class="auth-brand" href="#" aria-label="ExpoMind home"><svg class="auth-logo-mark" viewBox="0 0 256 256" aria-hidden="true"><path d="M 144 256 L 27.598 256 L 144 139.598 Z M 256 207.5 L 200 256 L 200 56 L 0 56 L 48 0 L 256 0 Z M 0 204.402 L 0 112 L 92.402 112 Z"></path></svg><b>ExpoMind</b></a>
+      <nav class="auth-links"><a href="#authProduct">Product</a><a href="#authWorkflow">Workflow</a><a href="#authPrivacy">Privacy</a></nav>
+      <button class="auth-nav-cta" type="button" id="authNavCta">Create account</button>
+    </header>
+    <div class="auth-message">
+      <span class="auth-kicker">AI EXHIBITION COPILOT</span>
+      <h1>Build lasting<br>business relationships.</h1>
+      <p>Turn every real exhibition conversation into verified context, clear opportunity signals, and a follow-up your team can act on.</p>
+      <button class="auth-hero-cta" type="button" id="authHeroCta">Get started <span>&rarr;</span></button>
+    </div>
+    <div class="auth-bottom" id="authProduct">
+      <section class="auth-story" id="authWorkflow">
+        <div><span class="auth-micro">WHAT DO WE DO?</span><h2>Conversations that<br>build momentum</h2></div>
+        <p>Local speech and AI analysis turn consented conversations into structured customer context, without losing the human story behind the lead.</p>
+        <div class="auth-feature-strip" id="authPrivacy"><span><i>01 /</i> Conversational <b>&rarr;</b></span><span><i>02 /</i> Connected <b>&rarr;</b></span><span><i>03 /</i> Private <b>&rarr;</b></span></div>
+      </section>
+      <div class="auth-panel">
+        <form class="auth-card" id="authForm">
+          <span class="auth-micro" id="authEyebrow">WELCOME BACK</span><h2 id="authTitle">Sign in to ExpoMind</h2><p id="authSubtitle">Continue your exhibition intelligence workflow.</p>
+          <div class="auth-fields"><label class="name-field" id="nameField">Full name<input id="authName" autocomplete="name" placeholder="Chen Xingyu"></label><label>Email<input id="authEmail" type="email" autocomplete="email" placeholder="you@company.com" required></label><label>Password<input id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" required></label></div>
+          <div class="auth-error" id="authError"></div>
+          <button class="auth-submit" id="authSubmit" type="submit">Sign in <span>&rarr;</span></button>
+          <p class="auth-switch"><span id="authQuestion">New to ExpoMind?</span> <button type="button" id="authSwitch">Create account</button></p>
+          <small class="auth-terms">By continuing, you agree to responsible capture and data privacy requirements.</small>
+        </form>
+      </div>
     </div>
   </section>
-  <div class="modal" id="consentModal"><div class="modal-card"><button class="modal-close" id="modalClose">&times;</button><div class="modal-icon">&#9673;</div><h2>Responsible capture</h2><p>Before recording, confirm that the other person has agreed to camera and audio capture. Raw media stays on this device in the demo.</p><label><input type="checkbox" id="consentCheck"> I have received clear consent</label><button class="save-btn" id="consentContinue" disabled>Continue with camera</button></div></div>
-  <div class="modal" id="contactModal"><form class="modal-card" id="contactForm"><button class="modal-close" type="button" id="contactClose">&times;</button><div class="modal-icon">+</div><h2>Create real contact</h2><p>Enter details confirmed by the person or copied from their business card.</p><label>Name<input id="contactName" required maxlength="100"></label><label>Company<input id="contactCompany" required maxlength="160"></label><label>Role<input id="contactRole" maxlength="160"></label><label>Interests, comma separated<input id="contactInterests"></label><label>Qualification score (0-100)<input id="contactScore" type="number" min="0" max="100" value="50"></label><button class="save-btn" type="submit">Save contact</button></form></div>
-  <script src="app.js"></script>
+  <div class="modal" id="consentModal"><div class="modal-card"><button class="modal-close" id="modalClose">&times;</button><div class="modal-icon">&#9673;</div><h2>Responsible capture</h2><p>Before recording, confirm that the other person has agreed to camera and audio capture. Saved contact photos remain in your local ExpoMind storage.</p><label><input type="checkbox" id="consentCheck"> I have received clear consent</label><button class="save-btn" id="consentContinue" disabled>Continue with camera + microphone</button></div></div>
+  <div class="modal" id="contactModal"><form class="modal-card" id="contactForm"><button class="modal-close" type="button" id="contactClose">&times;</button><div class="modal-icon">+</div><h2>Create real contact</h2><p>Enter details confirmed by the person or copied from their business card.</p><label>Name<input id="contactName" required maxlength="100"></label><label>Company<input id="contactCompany" required maxlength="160"></label><label>Role<input id="contactRole" maxlength="160"></label><label>Gender for default avatar<select id="contactGender"><option value="unspecified">Not specified</option><option value="male">Male</option><option value="female">Female</option></select></label><label>Phone<input id="contactPhone" maxlength="80"></label><label>Email<input id="contactEmail" maxlength="255"></label><label>Interests, comma separated<input id="contactInterests"></label><label>Personal summary<textarea id="contactSummary" maxlength="5000"></textarea></label><label>Qualification score (0-100)<input id="contactScore" type="number" min="0" max="100" value="50"></label><button class="save-btn" type="submit">Save contact</button></form></div>
+  <div class="modal" id="cardModal"><div class="modal-card business-card"><button class="modal-close" type="button" id="cardClose">&times;</button><div id="cardContent"></div></div></div>
+  <div class="modal" id="eventModal"><form class="modal-card event-modal-card" id="eventForm"><button class="modal-close" type="button" id="eventClose">&times;</button><div class="modal-icon">E</div><h2>Edit exhibition</h2><p>This name is saved to your ExpoMind account and shown across devices.</p><label>Exhibition name<input id="eventNameInput" required minlength="2" maxlength="120" autocomplete="off"></label><button class="save-btn" type="submit">Save exhibition name</button></form></div>
+  <div class="modal" id="profileModal"><form class="modal-card profile-settings-card" id="profileForm"><button class="modal-close" type="button" id="profileClose">&times;</button><div class="modal-icon">P</div><h2>Personal settings</h2><p>Update the identity and exhibition name shown in your workspace.</p><label>Display name<input id="profileName" required minlength="2" maxlength="80" autocomplete="name"></label><label>Email<input id="profileEmail" type="email" readonly></label><label>Exhibition name<input id="profileEventName" required minlength="2" maxlength="120"></label><button class="save-btn" type="submit">Save personal settings</button></form></div>
+  <div class="modal" id="logoutModal"><div class="modal-card logout-card"><button class="modal-close" type="button" id="logoutClose">&times;</button><div class="modal-icon">&rarr;</div><h2>Sign out?</h2><p>Your captured contacts and conversations are already stored safely. You can sign in again at any time.</p><div class="logout-actions"><button class="ghost-btn" type="button" id="logoutCancel">Cancel</button><button class="save-btn" type="button" id="logoutConfirm">Sign out</button></div></div></div>
+  <script>if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(items=>items.forEach(item=>item.unregister()));caches.keys().then(keys=>keys.forEach(key=>caches.delete(key)))}</script>
+  <script src="app.js?v=20260802-17"></script>
 </body>
 </html>

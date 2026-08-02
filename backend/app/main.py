@@ -1,15 +1,20 @@
 import base64
 import json
 import os
+import math
+import uuid
+import asyncio
+import tempfile
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 import httpx
 import jwt
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from pwdlib import PasswordHash
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func, select, text
@@ -23,7 +28,9 @@ ALGORITHM = "HS256"
 QWEN_API_KEY = os.getenv("DASHSCOPE_API_KEY", "").strip()
 QWEN_BASE_URL = os.getenv("QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1").rstrip("/")
 QWEN_VISION_MODEL = os.getenv("QWEN_VISION_MODEL", "qwen-vl-max")
-QWEN_TEXT_MODEL = os.getenv("QWEN_TEXT_MODEL", "qwen-plus")
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "tiny")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434").rstrip("/")
+LOCAL_LLM_MODEL = os.getenv("LOCAL_LLM_MODEL", "qwen2.5:0.5b")
 WECHAT_APP_ID = os.getenv("WECHAT_APP_ID", "").strip()
 WECHAT_APP_SECRET = os.getenv("WECHAT_APP_SECRET", "").strip()
 
@@ -31,6 +38,23 @@ engine = create_async_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 password_hash = PasswordHash.recommended()
 bearer = HTTPBearer(auto_error=False)
+
+
+whisper_model = None
+
+
+def get_whisper_model():
+    global whisper_model
+    if whisper_model is None:
+        from faster_whisper import WhisperModel
+        whisper_model = WhisperModel(WHISPER_MODEL, device="cpu", compute_type="int8")
+    return whisper_model
+
+
+def transcribe_audio_file(path: str) -> str:
+    model = get_whisper_model()
+    segments, _ = model.transcribe(path, language="zh", vad_filter=True, beam_size=3)
+    return "".join(segment.text for segment in segments).strip()
 
 
 def require_qwen():
@@ -65,6 +89,49 @@ async def qwen_chat(model: str, messages: list[dict]) -> dict:
         raise HTTPException(status_code=502, detail="AI provider is unavailable or returned an unexpected response") from exc
 
 
+async def local_llm_chat(messages: list[dict]) -> dict:
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            response = await client.post(
+                f"{OLLAMA_BASE_URL}/api/chat",
+                json={
+                    "model": LOCAL_LLM_MODEL,
+                    "messages": messages,
+                    "stream": False,
+                    "format": "json",
+                    "options": {"temperature": 0.1},
+                },
+            )
+        if response.status_code >= 400:
+            try:
+                detail = response.json().get("error", "Local AI request failed")
+            except (ValueError, AttributeError):
+                detail = "Local AI request failed"
+            raise HTTPException(status_code=502, detail=detail)
+        return parse_json_content(response.json()["message"]["content"])
+    except HTTPException:
+        raise
+    except (httpx.HTTPError, KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=502, detail="Local AI model is unavailable or returned an unexpected response") from exc
+
+
+def normalize_conversation_analysis(result: dict) -> dict:
+    summary = str(result.get("summary", "")).strip()[:100]
+    interests = result.get("interests", [])
+    evidence = result.get("evidence", [])
+    try:
+        score = max(0, min(100, int(result.get("score", 0))))
+    except (TypeError, ValueError):
+        score = 0
+    return {
+        "summary": summary,
+        "interests": [str(item).strip() for item in interests if str(item).strip()][:8] if isinstance(interests, list) else [],
+        "score": score,
+        "next_action": str(result.get("next_action", "")).strip(),
+        "evidence": [str(item).strip() for item in evidence if str(item).strip()][:5] if isinstance(evidence, list) else [],
+    }
+
+
 class Base(DeclarativeBase):
     pass
 
@@ -78,6 +145,7 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(20), default="user")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     wechat_openid: Mapped[str | None] = mapped_column(String(128), unique=True, index=True, nullable=True)
+    event_name: Mapped[str] = mapped_column(String(120), default="2026 Shenzhen Electronics Expo")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     contacts: Mapped[list["Contact"]] = relationship(back_populates="owner", cascade="all, delete-orphan")
 
@@ -91,6 +159,13 @@ class Contact(Base):
     role: Mapped[str] = mapped_column(String(160), default="")
     interests: Mapped[str] = mapped_column(Text, default="")
     score: Mapped[int] = mapped_column(Integer, default=50)
+    phone: Mapped[str] = mapped_column(String(80), default="")
+    contact_email: Mapped[str] = mapped_column(String(255), default="")
+    summary: Mapped[str] = mapped_column(Text, default="")
+    gender: Mapped[str] = mapped_column(String(20), default="unspecified")
+    photo_url: Mapped[str] = mapped_column(Text, default="")
+    face_embedding: Mapped[str] = mapped_column(Text, default="")
+    face_consent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     owner: Mapped[User] = relationship(back_populates="contacts")
     conversations: Mapped[list["Conversation"]] = relationship(back_populates="contact", cascade="all, delete-orphan")
@@ -141,7 +216,13 @@ class UserOut(BaseModel):
     email: EmailStr
     role: str
     is_active: bool
+    event_name: str = "2026 Shenzhen Electronics Expo"
     created_at: datetime
+
+
+class ProfilePatch(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=80)
+    event_name: str | None = Field(default=None, min_length=2, max_length=120)
 
 
 class AuthOut(BaseModel):
@@ -156,6 +237,10 @@ class ContactIn(BaseModel):
     role: str = Field(default="", max_length=160)
     interests: list[str] = Field(default_factory=list)
     score: int = Field(default=50, ge=0, le=100)
+    phone: str = Field(default="", max_length=80)
+    contact_email: str = Field(default="", max_length=255)
+    summary: str = Field(default="", max_length=5000)
+    gender: str = Field(default="unspecified", pattern="^(male|female|unspecified)$")
 
 
 class ContactPatch(BaseModel):
@@ -164,6 +249,10 @@ class ContactPatch(BaseModel):
     role: str | None = Field(default=None, max_length=160)
     interests: list[str] | None = None
     score: int | None = Field(default=None, ge=0, le=100)
+    phone: str | None = Field(default=None, max_length=80)
+    contact_email: str | None = Field(default=None, max_length=255)
+    summary: str | None = Field(default=None, max_length=5000)
+    gender: str | None = Field(default=None, pattern="^(male|female|unspecified)$")
 
 
 class ContactOut(BaseModel):
@@ -174,6 +263,12 @@ class ContactOut(BaseModel):
     role: str
     interests: str
     score: int
+    phone: str
+    contact_email: str
+    summary: str
+    gender: str
+    photo_url: str
+    face_consent_at: datetime | None
     created_at: datetime
 
 
@@ -198,6 +293,15 @@ class ConversationIn(BaseModel):
 
 class TranscriptAnalyzeIn(BaseModel):
     transcript: str = Field(min_length=5, max_length=50000)
+
+
+class FaceProfileIn(BaseModel):
+    embedding: list[float] = Field(min_length=64, max_length=2048)
+    consent_confirmed: bool
+
+
+class FaceMatchIn(BaseModel):
+    embedding: list[float] = Field(min_length=64, max_length=2048)
 
 
 async def get_db():
@@ -243,6 +347,7 @@ AdminUser = Annotated[User, Depends(admin_user)]
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    os.makedirs("/data/uploads", exist_ok=True)
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
         await connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'user'"))
@@ -266,6 +371,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="ExpoMind API", version="0.3.0", lifespan=lifespan)
+app.mount("/media", StaticFiles(directory="/data/uploads", check_dir=False), name="media")
 origins = [item.strip() for item in os.getenv("CORS_ORIGINS", "http://localhost:8080").split(",") if item.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
@@ -333,6 +439,25 @@ async def me(user: CurrentUser):
     return user
 
 
+@app.patch("/auth/me", response_model=UserOut)
+async def update_profile(data: ProfilePatch, user: CurrentUser, db: Db):
+    if data.name is None and data.event_name is None:
+        raise HTTPException(status_code=422, detail="No profile changes supplied")
+    if data.name is not None:
+        name = " ".join(data.name.split())
+        if len(name) < 2:
+            raise HTTPException(status_code=422, detail="Display name is too short")
+        user.name = name
+    if data.event_name is not None:
+        event_name = " ".join(data.event_name.split())
+        if len(event_name) < 2:
+            raise HTTPException(status_code=422, detail="Exhibition name is too short")
+        user.event_name = event_name
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
 @app.get("/contacts", response_model=list[ContactOut])
 async def list_contacts(user: CurrentUser, db: Db):
     result = await db.scalars(select(Contact).where(Contact.owner_id == user.id).order_by(Contact.score.desc()))
@@ -341,7 +466,7 @@ async def list_contacts(user: CurrentUser, db: Db):
 
 @app.post("/contacts", response_model=ContactOut, status_code=201)
 async def create_contact(data: ContactIn, user: CurrentUser, db: Db):
-    contact = Contact(owner_id=user.id, name=data.name, company=data.company, role=data.role, interests=",".join(data.interests), score=data.score)
+    contact = Contact(owner_id=user.id, name=data.name, company=data.company, role=data.role, interests=",".join(data.interests), score=data.score, phone=data.phone, contact_email=data.contact_email, summary=data.summary, gender=data.gender)
     db.add(contact)
     await db.commit()
     await db.refresh(contact)
@@ -370,6 +495,63 @@ async def delete_contact(contact_id: int, user: CurrentUser, db: Db):
         raise HTTPException(status_code=404, detail="Contact not found")
     await db.delete(contact)
     await db.commit()
+
+
+@app.post("/contacts/{contact_id}/photo")
+async def upload_contact_photo(contact_id: int, user: CurrentUser, db: Db, image: UploadFile = File(...)):
+    contact = await db.scalar(select(Contact).where(Contact.id == contact_id, Contact.owner_id == user.id))
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    if image.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise HTTPException(status_code=415, detail="Upload a JPEG, PNG or WebP image")
+    raw = await image.read(6 * 1024 * 1024)
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Image must be 5 MB or smaller")
+    extension = {"image/jpeg":"jpg", "image/png":"png", "image/webp":"webp"}[image.content_type]
+    filename = f"{user.id}/{contact.id}/{uuid.uuid4().hex}.{extension}"
+    local_path = os.path.join("/data/uploads", filename)
+    os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    with open(local_path, "wb") as output:
+        output.write(raw)
+    contact.photo_url = f"/api/media/{filename}"
+    await db.commit()
+    return {"photo_url": contact.photo_url, "storage": "local"}
+
+
+@app.post("/contacts/{contact_id}/face-profile")
+async def save_face_profile(contact_id: int, data: FaceProfileIn, user: CurrentUser, db: Db):
+    if not data.consent_confirmed:
+        raise HTTPException(status_code=400, detail="Explicit face-profile consent is required")
+    contact = await db.scalar(select(Contact).where(Contact.id == contact_id, Contact.owner_id == user.id))
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    norm = math.sqrt(sum(value * value for value in data.embedding))
+    if norm <= 0:
+        raise HTTPException(status_code=400, detail="Invalid face embedding")
+    contact.face_embedding = json.dumps([value / norm for value in data.embedding])
+    contact.face_consent_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"saved": True, "contact_id": contact.id, "consent_at": contact.face_consent_at}
+
+
+@app.post("/faces/match")
+async def match_face(data: FaceMatchIn, user: CurrentUser, db: Db):
+    norm = math.sqrt(sum(value * value for value in data.embedding))
+    if norm <= 0:
+        raise HTTPException(status_code=400, detail="Invalid face embedding")
+    candidate = [value / norm for value in data.embedding]
+    rows = await db.scalars(select(Contact).where(Contact.owner_id == user.id, Contact.face_embedding != ""))
+    best_contact, best_similarity = None, -1.0
+    for contact in rows:
+        stored = json.loads(contact.face_embedding)
+        if len(stored) != len(candidate):
+            continue
+        similarity = sum(a * b for a, b in zip(candidate, stored))
+        if similarity > best_similarity:
+            best_contact, best_similarity = contact, similarity
+    if not best_contact or best_similarity < 0.72:
+        return {"matched": False, "similarity": max(best_similarity, 0)}
+    return {"matched": True, "similarity": best_similarity, "contact": ContactOut.model_validate(best_contact)}
 
 
 @app.post("/conversations", status_code=201)
@@ -430,7 +612,12 @@ async def admin_audit_logs(_: AdminUser, db: Db):
 
 @app.get("/ai/status")
 async def ai_status(_: CurrentUser):
-    return {"configured": bool(QWEN_API_KEY), "vision_model": QWEN_VISION_MODEL if QWEN_API_KEY else None, "text_model": QWEN_TEXT_MODEL if QWEN_API_KEY else None}
+    return {
+        "configured": True,
+        "vision_model": QWEN_VISION_MODEL if QWEN_API_KEY else None,
+        "speech_model": f"faster-whisper:{WHISPER_MODEL}",
+        "analysis_model": f"ollama:{LOCAL_LLM_MODEL}",
+    }
 
 
 @app.post("/ai/business-card")
@@ -448,6 +635,29 @@ async def scan_business_card(user: CurrentUser, image: UploadFile = File(...)):
 
 @app.post("/ai/analyze-transcript")
 async def analyze_transcript(data: TranscriptAnalyzeIn, _: CurrentUser):
-    prompt = "Analyze this real exhibition conversation. Return JSON only with keys summary (string), interests (array of strings), score (integer 0-100 based only on stated buying signals), next_action (string), and evidence (array of exact short excerpts). Do not infer unsupported facts. Transcript:\n" + data.transcript
-    result = await qwen_chat(QWEN_TEXT_MODEL, [{"role": "system", "content": "You extract auditable CRM facts from conversations. Never fabricate."}, {"role": "user", "content": prompt}])
-    return {"source": "qwen", "result": result}
+    prompt = "分析下面真实展会客户对话。仅返回JSON，字段为：summary（中文总结，严格不超过100个汉字或字符）、interests（明确提及的兴趣数组）、score（仅依据购买信号的0-100整数）、next_action（建议下一步）、evidence（原对话中的简短原句数组）。不得补充对话中没有的事实。\n真实转写：\n" + data.transcript
+    result = await local_llm_chat([{"role": "system", "content": "你是严谨的展会CRM分析助手。仅从真实转写提取信息，不得编造，并输出合法JSON。"}, {"role": "user", "content": prompt}])
+    return {"source": "local-qwen2.5", "model": LOCAL_LLM_MODEL, "result": normalize_conversation_analysis(result)}
+
+
+@app.post("/ai/transcribe")
+async def transcribe_audio(_: CurrentUser, audio: UploadFile = File(...)):
+    allowed = {"audio/webm": ".webm", "audio/ogg": ".ogg", "audio/wav": ".wav", "audio/mpeg": ".mp3", "audio/mp4": ".m4a"}
+    content_type = (audio.content_type or "").split(";", 1)[0]
+    if content_type not in allowed:
+        raise HTTPException(status_code=415, detail="Record WebM, OGG, WAV, MP3 or M4A audio")
+    raw = await audio.read(10 * 1024 * 1024 + 1)
+    if len(raw) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Audio segment must be 10 MB or smaller")
+    path = ""
+    try:
+        with tempfile.NamedTemporaryFile(suffix=allowed[content_type], delete=False) as temporary:
+            temporary.write(raw)
+            path = temporary.name
+        transcript = await asyncio.to_thread(transcribe_audio_file, path)
+        return {"source": "faster-whisper", "transcript": transcript}
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Local Whisper transcription failed") from exc
+    finally:
+        if path and os.path.exists(path):
+            os.unlink(path)
