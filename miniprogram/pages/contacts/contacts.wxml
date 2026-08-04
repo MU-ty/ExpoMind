@@ -1,7 +1,30 @@
 <view class="page">
- <view class="row between"><view><view class="eyebrow">CRM</view><view class="title">联系人</view></view><button class="mini-btn" bindtap="openCreate">＋ 新建</button></view>
- <input class="input" placeholder="搜索姓名、公司或兴趣" bindinput="search"/>
- <view wx:if="{{!filtered.length}}" class="empty">没有联系人</view>
- <view wx:for="{{filtered}}" wx:key="id" class="card"><view class="row between"><view><view class="name">{{item.name}}</view><view class="muted small">{{item.company}} · {{item.role}}</view></view><view class="score">{{item.score}}%</view></view><view><text wx:for="{{item.interestList}}" wx:key="*this" class="tag">{{item}}</text></view><view class="actions"><button data-id="{{item.id}}" bindtap="edit">编辑</button><button class="delete" data-id="{{item.id}}" bindtap="remove">删除</button></view></view>
+  <view class="row between"><view><view class="eyebrow">CRM</view><view class="title">联系人</view></view><button class="mini-btn" bindtap="openCreate">＋ 新建</button></view>
+  <input class="input" placeholder="搜索姓名、公司或兴趣" bindinput="search"/>
+  <view wx:if="{{!filtered.length}}" class="empty">没有联系人</view>
+  <view wx:for="{{filtered}}" wx:key="id" class="card">
+    <view class="row between"><view class="contact-person"><image wx:if="{{item.photoUrl}}" class="contact-photo" src="{{item.photoUrl}}" mode="aspectFill"></image><view wx:else class="contact-photo placeholder">{{item.initial}}</view><view><view class="name">{{item.name}}</view><view class="muted small">{{item.company}} · {{item.role}}</view></view></view><view class="score">{{item.score}}%</view></view>
+    <view><text wx:for="{{item.interestList}}" wx:key="*this" class="tag">{{item}}</text></view>
+    <view class="actions"><button data-id="{{item.id}}" bindtap="edit">编辑</button><button class="delete" data-id="{{item.id}}" bindtap="remove">删除</button></view>
+  </view>
 </view>
-<view wx:if="{{showForm}}" class="overlay"><view class="sheet"><view class="row between"><view class="sheet-title">{{editingId?'编辑联系人':'新建联系人'}}</view><text bindtap="close">×</text></view><input class="input" placeholder="姓名（必填）" value="{{form.name}}" data-key="name" bindinput="field"/><input class="input" placeholder="公司（必填）" value="{{form.company}}" data-key="company" bindinput="field"/><input class="input" placeholder="职位" value="{{form.role}}" data-key="role" bindinput="field"/><input class="input" placeholder="兴趣，用逗号分隔" value="{{form.interests}}" data-key="interests" bindinput="field"/><input class="input" type="number" placeholder="评分 0-100" value="{{form.score}}" data-key="score" bindinput="field"/><button class="btn" bindtap="save">保存真实资料</button></view></view>
+<view wx:if="{{showForm}}" class="overlay">
+  <view class="sheet">
+    <view class="sheet-head row between"><view class="sheet-title">{{editingId?'编辑联系人':'新建联系人'}}</view><text bindtap="close">×</text></view>
+    <scroll-view scroll-y="{{true}}" enhanced="{{true}}" show-scrollbar="{{true}}" scroll-with-animation="{{true}}" class="form-scroll">
+      <view class="form-content">
+        <input class="input" placeholder="姓名（必填）" value="{{form.name}}" data-key="name" bindinput="field"/>
+        <input class="input" placeholder="公司（必填）" value="{{form.company}}" data-key="company" bindinput="field"/>
+        <input class="input" placeholder="职位" value="{{form.role}}" data-key="role" bindinput="field"/>
+        <input class="input" type="number" placeholder="电话" value="{{form.phone}}" data-key="phone" bindinput="field"/>
+        <input class="input" placeholder="邮箱" value="{{form.contactEmail}}" data-key="contactEmail" bindinput="field"/>
+        <input class="input" placeholder="兴趣，用逗号分隔" value="{{form.interests}}" data-key="interests" bindinput="field"/>
+        <textarea class="input summary-input" placeholder="客户摘要" value="{{form.summary}}" data-key="summary" bindinput="field"></textarea>
+        <picker mode="selector" range="{{genderLabels}}" value="{{genderIndex}}" bindchange="genderChange"><view class="input picker-input">性别：{{genderLabels[genderIndex]}}</view></picker>
+        <input class="input" type="number" placeholder="评分 0-100" value="{{form.score}}" data-key="score" bindinput="field"/>
+        <view class="scroll-space"></view>
+      </view>
+    </scroll-view>
+    <view class="sheet-footer"><button class="btn save-contact" bindtap="save">保存真实资料</button></view>
+  </view>
+</view>

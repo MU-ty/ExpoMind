@@ -1,1 +1,65 @@
-.capture-page{background:#07111f;min-height:100vh}.camera,.camera-off{height:620rpx;width:100%;position:relative;background:radial-gradient(circle,#163445,#081522);display:flex;flex-direction:column;align-items:center;justify-content:center}.camera-off .btn{margin-top:30rpx;width:360rpx}.live{position:absolute;left:24rpx;top:24rpx;color:#ff6f78;background:rgba(4,12,22,.7);padding:12rpx 18rpx;border-radius:10rpx}.frame{position:absolute;width:370rpx;height:220rpx;border:3rpx solid #55dfce;left:190rpx;top:190rpx}.toolbar{height:120rpx;display:flex;align-items:center;justify-content:center;gap:54rpx;background:#091625}.tool{background:transparent;color:#8fa0b0;font-size:22rpx}.shutter{width:78rpx;height:78rpx;border-radius:50%;background:#edfafa;border:8rpx solid #23394a}.form-area{padding-top:24rpx}.consent{display:flex;gap:20rpx}.tiny{font-size:20rpx;margin-top:6rpx}.transcript,.next{box-sizing:border-box;width:100%;min-height:190rpx;background:#0a1726;border:1rpx solid rgba(255,255,255,.12);border-radius:16rpx;padding:22rpx;color:#fff;margin-bottom:18rpx}.summary{line-height:1.7;margin:20rpx 0}.score-row{margin-top:22rpx}.next{min-height:120rpx;margin-top:20rpx}
+.capture-page { min-height: 100vh; background: #f7f6f2; }
+
+.camera, .camera-off {
+  position: relative;
+  display: flex;
+  width: calc(100% - 28rpx);
+  height: 610rpx;
+  align-items: center;
+  justify-content: center;
+  margin: 14rpx;
+  overflow: hidden;
+  border-radius: 18rpx;
+  background: radial-gradient(circle at 50% 35%, #3b3b39, #121212 70%);
+  color: #fff;
+}
+
+.camera-off { flex-direction: column; color: rgba(255, 255, 255, .72); }
+.camera-off .btn { width: 360rpx; margin-top: 30rpx; border-color: #fff; background: #fff; color: #191919; }
+.live { position: absolute; top: 24rpx; left: 24rpx; padding: 11rpx 17rpx; border-radius: 9rpx; background: rgba(25, 25, 25, .78); color: #fff; font-size: 20rpx; }
+.frame { position: absolute; top: 185rpx; left: 190rpx; width: 370rpx; height: 220rpx; border: 3rpx solid rgba(255, 255, 255, .9); }
+
+.toolbar { display: flex; height: 122rpx; align-items: center; justify-content: center; background: #fff; }
+.tool { width: 180rpx; margin: 0; padding: 0; background: transparent; color: #77746e; font-size: 21rpx; }
+.tool::after { border: 0; }
+.shutter { width: 78rpx; height: 78rpx; margin: 0 42rpx; padding: 7rpx; border: 3rpx solid #191919; border-radius: 50%; background: #191919; box-shadow: inset 0 0 0 7rpx #fff; }
+.shutter::after { border: 0; }
+.form-area { padding-top: 30rpx; }
+.consent { display: flex; gap: 20rpx; }
+.tiny { margin-top: 6rpx; color: #8a8780; font-size: 20rpx; }
+.picker-contact { display: flex; align-items: center; justify-content: space-between; }
+.picker-arrow { color: #8a8780; font-size: 28rpx; }
+.empty-contact { color: #77746e; }
+.reference-card { display: flex; align-items: center; margin: 0 0 18rpx; padding: 14rpx; border: 1rpx solid rgba(25,25,25,.12); border-radius: 14rpx; background: #fff; }
+.reference-photo { width: 92rpx; height: 92rpx; margin-right: 18rpx; border-radius: 11rpx; background: #e8e6e1; }
+.reference-title { color: #191919; font-size: 25rpx; font-weight: 600; }
+.reference-card>view { min-width: 0; flex: 1; }
+.reference-arrow { color: #77746e; font-family: Georgia, serif; font-size: 42rpx; }
+
+.record {
+  margin-bottom: 18rpx;
+  border: 1rpx solid rgba(25, 25, 25, .12);
+  border-radius: 13rpx;
+  background: #fff;
+  color: #191919;
+  font-size: 25rpx;
+}
+
+.record::after { border: 0; }
+.record.recording { border-color: rgba(150, 61, 66, .25); background: #963d42; color: #fff; }
+
+.transcript, .next {
+  width: 100%;
+  min-height: 200rpx;
+  margin-bottom: 18rpx;
+  padding: 22rpx;
+  box-sizing: border-box;
+  border: 1rpx solid rgba(25, 25, 25, .14);
+  border-radius: 14rpx;
+  background: #fff;
+  color: #191919;
+}
+
+.summary { margin: 20rpx 0; color: #5f5c57; line-height: 1.7; }
+.score-row { margin-top: 22rpx; padding-top: 20rpx; border-top: 1rpx solid rgba(25, 25, 25, .08); }
+.next { min-height: 120rpx; margin-top: 20rpx; background: #f7f6f2; }

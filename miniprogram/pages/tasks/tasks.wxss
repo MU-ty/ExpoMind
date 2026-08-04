@@ -1,1 +1,5 @@
-.name{font-weight:700}.date{font-size:20rpx;color:#6f8295}.action{font-size:32rpx;line-height:1.5;margin:22rpx 0;color:#dcf9f4}.summary{line-height:1.5}.company{font-size:20rpx;color:#55dfce;margin-top:18rpx}
+.name { color: #191919; font-size: 28rpx; font-weight: 600; }
+.date { color: #8a8780; font-size: 19rpx; }
+.action { margin: 22rpx 0; color: #191919; font-family: Georgia, "Songti SC", serif; font-size: 32rpx; line-height: 1.5; }
+.summary { color: #6d6963; line-height: 1.6; }
+.company { margin-top: 18rpx; color: #77746e; font-size: 20rpx; letter-spacing: 1rpx; }

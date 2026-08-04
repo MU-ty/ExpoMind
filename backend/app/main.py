@@ -42,6 +42,21 @@ bearer = HTTPBearer(auto_error=False)
 
 whisper_model = None
 
+GENERIC_UPLOAD_TYPES = {"", "application/octet-stream"}
+IMAGE_TYPES_BY_EXTENSION = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+AUDIO_TYPES_BY_EXTENSION = {".webm": "audio/webm", ".ogg": "audio/ogg", ".wav": "audio/wav", ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".mp4": "audio/mp4"}
+
+
+def resolve_upload_content_type(upload: UploadFile, types_by_extension: dict[str, str]) -> str | None:
+    """Accept explicit MIME types and WeChat's generic multipart upload type."""
+    content_type = (upload.content_type or "").split(";", 1)[0].strip().lower()
+    if content_type in types_by_extension.values():
+        return content_type
+    if content_type in GENERIC_UPLOAD_TYPES:
+        extension = os.path.splitext(upload.filename or "")[1].lower()
+        return types_by_extension.get(extension)
+    return None
+
 
 def get_whisper_model():
     global whisper_model
@@ -502,12 +517,13 @@ async def upload_contact_photo(contact_id: int, user: CurrentUser, db: Db, image
     contact = await db.scalar(select(Contact).where(Contact.id == contact_id, Contact.owner_id == user.id))
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
-    if image.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+    content_type = resolve_upload_content_type(image, IMAGE_TYPES_BY_EXTENSION)
+    if not content_type:
         raise HTTPException(status_code=415, detail="Upload a JPEG, PNG or WebP image")
     raw = await image.read(6 * 1024 * 1024)
     if len(raw) > 5 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Image must be 5 MB or smaller")
-    extension = {"image/jpeg":"jpg", "image/png":"png", "image/webp":"webp"}[image.content_type]
+    extension = {"image/jpeg":"jpg", "image/png":"png", "image/webp":"webp"}[content_type]
     filename = f"{user.id}/{contact.id}/{uuid.uuid4().hex}.{extension}"
     local_path = os.path.join("/data/uploads", filename)
     os.makedirs(os.path.dirname(local_path), exist_ok=True)
@@ -622,14 +638,15 @@ async def ai_status(_: CurrentUser):
 
 @app.post("/ai/business-card")
 async def scan_business_card(user: CurrentUser, image: UploadFile = File(...)):
-    if image.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+    content_type = resolve_upload_content_type(image, IMAGE_TYPES_BY_EXTENSION)
+    if not content_type:
         raise HTTPException(status_code=415, detail="Upload a JPEG, PNG or WebP image")
     raw = await image.read(6 * 1024 * 1024)
     if len(raw) > 5 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Image must be 5 MB or smaller")
     encoded = base64.b64encode(raw).decode("ascii")
     prompt = "Read this business card. Return JSON only with keys name, company, role, phone, email, interests. Use empty strings or an empty interests array when not visible. Never invent text."
-    data = await qwen_chat(QWEN_VISION_MODEL, [{"role": "user", "content": [{"type": "image_url", "image_url": {"url": f"data:{image.content_type};base64,{encoded}"}}, {"type": "text", "text": prompt}]}])
+    data = await qwen_chat(QWEN_VISION_MODEL, [{"role": "user", "content": [{"type": "image_url", "image_url": {"url": f"data:{content_type};base64,{encoded}"}}, {"type": "text", "text": prompt}]}])
     return {"source": "qwen", "result": data}
 
 
@@ -642,16 +659,16 @@ async def analyze_transcript(data: TranscriptAnalyzeIn, _: CurrentUser):
 
 @app.post("/ai/transcribe")
 async def transcribe_audio(_: CurrentUser, audio: UploadFile = File(...)):
-    allowed = {"audio/webm": ".webm", "audio/ogg": ".ogg", "audio/wav": ".wav", "audio/mpeg": ".mp3", "audio/mp4": ".m4a"}
-    content_type = (audio.content_type or "").split(";", 1)[0]
-    if content_type not in allowed:
+    content_type = resolve_upload_content_type(audio, AUDIO_TYPES_BY_EXTENSION)
+    if not content_type:
         raise HTTPException(status_code=415, detail="Record WebM, OGG, WAV, MP3 or M4A audio")
     raw = await audio.read(10 * 1024 * 1024 + 1)
     if len(raw) > 10 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Audio segment must be 10 MB or smaller")
     path = ""
     try:
-        with tempfile.NamedTemporaryFile(suffix=allowed[content_type], delete=False) as temporary:
+        suffix = {"audio/webm": ".webm", "audio/ogg": ".ogg", "audio/wav": ".wav", "audio/mpeg": ".mp3", "audio/mp4": ".m4a"}[content_type]
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temporary:
             temporary.write(raw)
             path = temporary.name
         transcript = await asyncio.to_thread(transcribe_audio_file, path)

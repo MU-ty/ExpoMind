@@ -1,13 +1,14 @@
 {
-  "pages": ["pages/login/login","pages/home/home","pages/contacts/contacts","pages/capture/capture","pages/tasks/tasks","pages/admin/admin"],
-  "window": {"navigationBarBackgroundColor":"#07111f","navigationBarTextStyle":"white","navigationBarTitleText":"ExpoMind","backgroundColor":"#07111f","backgroundTextStyle":"dark"},
-  "tabBar": {"color":"#7f91a4","selectedColor":"#43e6cd","backgroundColor":"#0a1726","borderStyle":"black","list":[
-    {"pagePath":"pages/home/home","text":"Home"},
-    {"pagePath":"pages/contacts/contacts","text":"Contacts"},
-    {"pagePath":"pages/capture/capture","text":"Capture"},
-    {"pagePath":"pages/tasks/tasks","text":"Tasks"}
+  "pages": ["pages/login/login","pages/home/home","pages/contacts/contacts","pages/capture/capture","pages/tasks/tasks","pages/settings/settings","pages/admin/admin"],
+  "window": {"navigationBarBackgroundColor":"#f7f6f2","navigationBarTextStyle":"black","navigationBarTitleText":"ExpoMind","backgroundColor":"#f7f6f2","backgroundTextStyle":"light"},
+  "tabBar": {"custom":true,"color":"#77746e","selectedColor":"#ffffff","backgroundColor":"#ffffff","borderStyle":"white","list":[
+    {"pagePath":"pages/home/home","text":"首页"},
+    {"pagePath":"pages/contacts/contacts","text":"联系人"},
+    {"pagePath":"pages/capture/capture","text":"现场"},
+    {"pagePath":"pages/tasks/tasks","text":"跟进"},
+    {"pagePath":"pages/settings/settings","text":"我的"}
   ]},
-  "permission": {"scope.record":{"desc":"Record an exhibition conversation only after clear consent."}},
+  "permission": {"scope.record":{"desc":"获得对方明确同意后，用于记录展会现场交流并生成文字转写。"}},
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
 }
