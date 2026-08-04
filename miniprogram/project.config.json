@@ -1,7 +1,7 @@
 {
   "description": "ExpoMind WeChat Mini Program",
   "packOptions": {"ignore": []},
-  "setting": {"urlCheck": true, "es6": true, "enhance": true, "postcss": true, "minified": true},
+  "setting": {"urlCheck": false, "es6": true, "enhance": true, "postcss": true, "minified": true},
   "compileType": "miniprogram",
   "appid": "touristappid",
   "projectname": "ExpoMind",

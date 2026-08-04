@@ -1,7 +1,24 @@
 <view class="login">
-  <view class="logo">E</view><view class="brand">ExpoMind</view>
+  <view class="logo">E</view>
+  <view class="brand">ExpoMind</view>
   <view class="hero">每一次展会交流，<text>都值得被记住。</text></view>
-  <view class="muted intro">使用微信安全登录。ExpoMind 不会获取你的微信密码，业务数据独立保存在企业数据库。</view>
-  <button class="btn login-btn" loading="{{loading}}" disabled="{{loading}}" bindtap="login">微信登录</button>
-  <view class="terms">登录即表示你同意隐私政策；录制前必须获得对方明确同意。</view>
+  <view class="muted intro">联系人、现场交流和跟进任务与 Web 端共享同一套真实业务数据。</view>
+
+  <view wx:if="{{wechatConfigured === null}}" class="status">正在检查微信登录配置…</view>
+  <button wx:elif="{{wechatConfigured}}" class="btn login-btn" loading="{{loading}}" disabled="{{loading}}" bindtap="loginWechat">微信登录</button>
+  <view wx:else class="status warning">服务端尚未配置微信 AppID；开发阶段可使用账号密码联调。</view>
+
+  <view wx:if="{{localDev}}" class="dev-login">
+    <view class="divider"><text>开发环境登录</text></view>
+    <view class="field-label">电脑接口地址</view>
+    <input class="input endpoint-input" value="{{endpointDraft}}" data-key="endpointDraft" bindinput="field" placeholder="http://电脑局域网IP:8088/api"/>
+    <button class="endpoint-test" bindtap="saveEndpoint">测试并保存接口</button>
+    <view class="field-label">登录账号</view>
+    <input class="input" value="{{email}}" data-key="email" bindinput="field" placeholder="邮箱"/>
+    <input class="input" password value="{{password}}" data-key="password" bindinput="field" placeholder="密码"/>
+    <button class="btn secondary" loading="{{passwordLoading}}" disabled="{{passwordLoading}}" bindtap="loginPassword">账号密码登录</button>
+    <view class="endpoint">当前接口：{{apiBaseUrl}}</view>
+  </view>
+
+  <view class="terms">录音和拍摄前必须获得对方明确同意。</view>
 </view>

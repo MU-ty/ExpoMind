@@ -1,0 +1,37 @@
+<view class="page">
+  <view class="eyebrow">ACCOUNT</view>
+  <view class="title">个人设置</view>
+  <view class="muted intro">管理登录账号和当前展会信息</view>
+
+  <view wx:if="{{loading}}" class="empty">正在加载个人资料…</view>
+
+  <block wx:elif="{{user}}">
+    <view class="profile-card card">
+      <view class="monogram">{{initial}}</view>
+      <view class="profile-main">
+        <view class="profile-name">{{user.name}}</view>
+        <view class="muted profile-email">{{user.email}}</view>
+      </view>
+      <view class="status">{{user.is_active ? '使用中' : '已停用'}}</view>
+    </view>
+
+    <view class="section-label">个人资料</view>
+    <view class="card form-card">
+      <view class="label">姓名</view>
+      <input class="input" value="{{name}}" maxlength="80" placeholder="请输入姓名" data-key="name" bindinput="field" />
+      <view class="label">当前展会</view>
+      <input class="input last-input" value="{{eventName}}" maxlength="120" placeholder="请输入展会名称" data-key="eventName" bindinput="field" />
+      <button class="btn" loading="{{saving}}" disabled="{{saving}}" bindtap="saveProfile">保存个人资料</button>
+    </view>
+
+    <view class="section-label">账号信息</view>
+    <view class="card info-card">
+      <view class="info-row"><text class="muted">登录邮箱</text><text class="info-value">{{user.email}}</text></view>
+      <view class="info-row"><text class="muted">账号角色</text><text class="info-value">{{user.role === 'admin' ? '管理员' : '成员'}}</text></view>
+      <view class="info-row"><text class="muted">服务地址</text><text class="info-value endpoint">{{apiBaseUrl}}</text></view>
+    </view>
+
+    <button class="btn danger logout" bindtap="logout">退出登录</button>
+    <view class="logout-note muted">退出后，本机保存的登录凭证将被清除。</view>
+  </block>
+</view>
